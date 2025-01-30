@@ -18,6 +18,11 @@
             margin: 10px 0;
             border-radius: 5px;
         }
+        .selectors-container {
+            border: 1px dashed #aaa;
+            padding: 10px;
+            margin: 5px 0;
+        }
         .btn {
             padding: 8px 15px;
             background-color: #4CAF50;
@@ -38,6 +43,7 @@
             padding: 15px;
             border-radius: 5px;
             white-space: pre-wrap;
+            font-family: monospace;
         }
         .tab {
             overflow: hidden;
@@ -102,16 +108,21 @@
     <div id="ingressSection" class="rule-section active">
         <div id="ingressRules">
             <div class="rule-container">
-                <h4>From:</h4>
-                <div>
-                    <label>Namespace Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="ns-label-key">
-                    <input type="text" placeholder="Value" class="ns-label-value">
-                </div>
-                <div>
-                    <label>Pod Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="pod-label-key">
-                    <input type="text" placeholder="Value" class="pod-label-value">
+                <h4>Rule:</h4>
+                <div class="from-selectors">
+                    <div class="selectors-container">
+                        <h5>From Selectors:</h5>
+                        <div>
+                            <label>Namespace Selector Labels:</label>
+                            <input type="text" placeholder="Key" class="ns-label-key">
+                            <input type="text" placeholder="Value" class="ns-label-value">
+                        </div>
+                        <div>
+                            <label>Pod Selector Labels:</label>
+                            <input type="text" placeholder="Key" class="pod-label-key">
+                            <input type="text" placeholder="Value" class="pod-label-value">
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label>Ports:</label>
@@ -131,16 +142,21 @@
     <div id="egressSection" class="rule-section">
         <div id="egressRules">
             <div class="rule-container">
-                <h4>To:</h4>
-                <div>
-                    <label>Namespace Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="ns-label-key">
-                    <input type="text" placeholder="Value" class="ns-label-value">
-                </div>
-                <div>
-                    <label>Pod Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="pod-label-key">
-                    <input type="text" placeholder="Value" class="pod-label-value">
+                <h4>Rule:</h4>
+                <div class="to-selectors">
+                    <div class="selectors-container">
+                        <h5>To Selectors:</h5>
+                        <div>
+                            <label>Namespace Selector Labels:</label>
+                            <input type="text" placeholder="Key" class="ns-label-key">
+                            <input type="text" placeholder="Value" class="ns-label-value">
+                        </div>
+                        <div>
+                            <label>Pod Selector Labels:</label>
+                            <input type="text" placeholder="Key" class="pod-label-key">
+                            <input type="text" placeholder="Value" class="pod-label-value">
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label>Ports:</label>
@@ -188,20 +204,23 @@
             document.getElementById('podLabels').appendChild(container);
         }
 
-        function addIngressRule() {
-            const container = document.createElement('div');
-            container.className = 'rule-container';
-            container.innerHTML = `
-                <h4>From:</h4>
-                <div>
-                    <label>Namespace Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="ns-label-key">
-                    <input type="text" placeholder="Value" class="ns-label-value">
-                </div>
-                <div>
-                    <label>Pod Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="pod-label-key">
-                    <input type="text" placeholder="Value" class="pod-label-value">
+        function createRuleHTML(type) {
+            return `
+                <h4>Rule:</h4>
+                <div class="${type}-selectors">
+                    <div class="selectors-container">
+                        <h5>${type === 'from' ? 'From' : 'To'} Selectors:</h5>
+                        <div>
+                            <label>Namespace Selector Labels:</label>
+                            <input type="text" placeholder="Key" class="ns-label-key">
+                            <input type="text" placeholder="Value" class="ns-label-value">
+                        </div>
+                        <div>
+                            <label>Pod Selector Labels:</label>
+                            <input type="text" placeholder="Key" class="pod-label-key">
+                            <input type="text" placeholder="Value" class="pod-label-value">
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label>Ports:</label>
@@ -214,35 +233,19 @@
                 </div>
                 <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
             `;
+        }
+
+        function addIngressRule() {
+            const container = document.createElement('div');
+            container.className = 'rule-container';
+            container.innerHTML = createRuleHTML('from');
             document.getElementById('ingressRules').appendChild(container);
         }
 
         function addEgressRule() {
             const container = document.createElement('div');
             container.className = 'rule-container';
-            container.innerHTML = `
-                <h4>To:</h4>
-                <div>
-                    <label>Namespace Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="ns-label-key">
-                    <input type="text" placeholder="Value" class="ns-label-value">
-                </div>
-                <div>
-                    <label>Pod Selector Labels:</label>
-                    <input type="text" placeholder="Key" class="pod-label-key">
-                    <input type="text" placeholder="Value" class="pod-label-value">
-                </div>
-                <div>
-                    <label>Ports:</label>
-                    <input type="text" placeholder="Port" class="port">
-                    <select class="protocol">
-                        <option value="TCP">TCP</option>
-                        <option value="UDP">UDP</option>
-                        <option value="SCTP">SCTP</option>
-                    </select>
-                </div>
-                <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
-            `;
+            container.innerHTML = createRuleHTML('to');
             document.getElementById('egressRules').appendChild(container);
         }
 
@@ -278,6 +281,7 @@
                     from: []
                 };
 
+                // Add namespace selector if provided
                 if (nsKey && nsValue) {
                     rule.from.push({
                         namespaceSelector: {
@@ -288,6 +292,7 @@
                     });
                 }
 
+                // Add pod selector if provided
                 if (podKey && podValue) {
                     rule.from.push({
                         podSelector: {
@@ -298,6 +303,7 @@
                     });
                 }
 
+                // Add ports if provided
                 if (port) {
                     rule.ports = [{
                         port: parseInt(port),
@@ -324,6 +330,7 @@
                     to: []
                 };
 
+                // Add namespace selector if provided
                 if (nsKey && nsValue) {
                     rule.to.push({
                         namespaceSelector: {
@@ -334,6 +341,7 @@
                     });
                 }
 
+                // Add pod selector if provided
                 if (podKey && podValue) {
                     rule.to.push({
                         podSelector: {
@@ -344,6 +352,7 @@
                     });
                 }
 
+                // Add ports if provided
                 if (port) {
                     rule.ports = [{
                         port: parseInt(port),
@@ -368,13 +377,12 @@
                         matchLabels: podLabels
                     },
                     policyTypes: ['Ingress', 'Egress'],
-                    ingress: ingressRules,
-                    egress: egressRules
+                    ingress: ingressRules.length > 0 ? ingressRules : [{}],
+                    egress: egressRules.length > 0 ? egressRules : []
                 }
             };
 
-            document.getElementById('output').textContent = 
-                jsToYaml(policy);
+            document.getElementById('output').textContent = jsToYaml(policy);
         }
 
         function jsToYaml(obj, indent = 0) {
@@ -388,7 +396,11 @@
                         yaml += `${spaces}[]\n`;
                     } else {
                         obj[key].forEach(item => {
-                            yaml += `${spaces}- ${typeof item === 'object' ? '\n' + jsToYaml(item, indent + 2) : item}\n`;
+                            if (Object.keys(item).length === 0) {
+                                yaml += `${spaces}-\n`;
+                            } else {
+                                yaml += `${spaces}- ${typeof item === 'object' ? '\n' + jsToYaml(item, indent + 2) : item}\n`;
+                            }
                         });
                     }
                 } else if (typeof obj[key] === 'object') {
