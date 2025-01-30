@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NetworkPolicy Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .rule-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .btn {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        #output {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            margin-bottom: 20px;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .rule-section {
+            display: none;
+        }
+        .rule-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>NetworkPolicy Generator</h1>
+    
+    <div class="form-group">
+        <label>Policy Name:</label>
+        <input type="text" id="policyName" value="example-network-policy">
+    </div>
+
+    <div class="form-group">
+        <label>Namespace:</label>
+        <input type="text" id="namespace" value="default">
+    </div>
+
+    <div class="form-group">
+        <label>Pod Selector Labels:</label>
+        <div id="podLabels">
+            <div class="rule-container">
+                <input type="text" placeholder="Key" class="label-key">
+                <input type="text" placeholder="Value" class="label-value">
+                <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
+            </div>
+        </div>
+        <button class="btn" onclick="addPodLabel()">Label Ekle</button>
+    </div>
+
+    <div class="tab">
+        <button class="tablinks active" onclick="openRuleType(event, 'ingressSection')">Ingress Rules</button>
+        <button class="tablinks" onclick="openRuleType(event, 'egressSection')">Egress Rules</button>
+    </div>
+
+    <div id="ingressSection" class="rule-section active">
+        <div id="ingressRules">
+            <div class="rule-container">
+                <h4>From:</h4>
+                <div>
+                    <label>Namespace Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="ns-label-key">
+                    <input type="text" placeholder="Value" class="ns-label-value">
+                </div>
+                <div>
+                    <label>Pod Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="pod-label-key">
+                    <input type="text" placeholder="Value" class="pod-label-value">
+                </div>
+                <div>
+                    <label>Ports:</label>
+                    <input type="text" placeholder="Port" class="port">
+                    <select class="protocol">
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="SCTP">SCTP</option>
+                    </select>
+                </div>
+                <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
+            </div>
+        </div>
+        <button class="btn" onclick="addIngressRule()">Ingress Rule Ekle</button>
+    </div>
+
+    <div id="egressSection" class="rule-section">
+        <div id="egressRules">
+            <div class="rule-container">
+                <h4>To:</h4>
+                <div>
+                    <label>Namespace Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="ns-label-key">
+                    <input type="text" placeholder="Value" class="ns-label-value">
+                </div>
+                <div>
+                    <label>Pod Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="pod-label-key">
+                    <input type="text" placeholder="Value" class="pod-label-value">
+                </div>
+                <div>
+                    <label>Ports:</label>
+                    <input type="text" placeholder="Port" class="port">
+                    <select class="protocol">
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="SCTP">SCTP</option>
+                    </select>
+                </div>
+                <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
+            </div>
+        </div>
+        <button class="btn" onclick="addEgressRule()">Egress Rule Ekle</button>
+    </div>
+
+    <button class="btn" onclick="generatePolicy()">NetworkPolicy Oluştur</button>
+
+    <h3>Generated YAML:</h3>
+    <pre id="output"></pre>
+
+    <script>
+        function openRuleType(evt, sectionName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("rule-section");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(sectionName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function addPodLabel() {
+            const container = document.createElement('div');
+            container.className = 'rule-container';
+            container.innerHTML = `
+                <input type="text" placeholder="Key" class="label-key">
+                <input type="text" placeholder="Value" class="label-value">
+                <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
+            `;
+            document.getElementById('podLabels').appendChild(container);
+        }
+
+        function addIngressRule() {
+            const container = document.createElement('div');
+            container.className = 'rule-container';
+            container.innerHTML = `
+                <h4>From:</h4>
+                <div>
+                    <label>Namespace Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="ns-label-key">
+                    <input type="text" placeholder="Value" class="ns-label-value">
+                </div>
+                <div>
+                    <label>Pod Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="pod-label-key">
+                    <input type="text" placeholder="Value" class="pod-label-value">
+                </div>
+                <div>
+                    <label>Ports:</label>
+                    <input type="text" placeholder="Port" class="port">
+                    <select class="protocol">
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="SCTP">SCTP</option>
+                    </select>
+                </div>
+                <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
+            `;
+            document.getElementById('ingressRules').appendChild(container);
+        }
+
+        function addEgressRule() {
+            const container = document.createElement('div');
+            container.className = 'rule-container';
+            container.innerHTML = `
+                <h4>To:</h4>
+                <div>
+                    <label>Namespace Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="ns-label-key">
+                    <input type="text" placeholder="Value" class="ns-label-value">
+                </div>
+                <div>
+                    <label>Pod Selector Labels:</label>
+                    <input type="text" placeholder="Key" class="pod-label-key">
+                    <input type="text" placeholder="Value" class="pod-label-value">
+                </div>
+                <div>
+                    <label>Ports:</label>
+                    <input type="text" placeholder="Port" class="port">
+                    <select class="protocol">
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="SCTP">SCTP</option>
+                    </select>
+                </div>
+                <button class="btn delete-btn" onclick="removeContainer(this)">Sil</button>
+            `;
+            document.getElementById('egressRules').appendChild(container);
+        }
+
+        function removeContainer(button) {
+            button.parentElement.remove();
+        }
+
+        function generatePolicy() {
+            const policyName = document.getElementById('policyName').value;
+            const namespace = document.getElementById('namespace').value;
+            
+            // Pod selector labels
+            const podLabels = {};
+            document.querySelectorAll('#podLabels .rule-container').forEach(container => {
+                const key = container.querySelector('.label-key').value;
+                const value = container.querySelector('.label-value').value;
+                if (key && value) {
+                    podLabels[key] = value;
+                }
+            });
+
+            // Ingress rules
+            const ingressRules = [];
+            document.querySelectorAll('#ingressRules .rule-container').forEach(container => {
+                const nsKey = container.querySelector('.ns-label-key').value;
+                const nsValue = container.querySelector('.ns-label-value').value;
+                const podKey = container.querySelector('.pod-label-key').value;
+                const podValue = container.querySelector('.pod-label-value').value;
+                const port = container.querySelector('.port').value;
+                const protocol = container.querySelector('.protocol').value;
+
+                const rule = {
+                    from: []
+                };
+
+                if (nsKey && nsValue) {
+                    rule.from.push({
+                        namespaceSelector: {
+                            matchLabels: {
+                                [nsKey]: nsValue
+                            }
+                        }
+                    });
+                }
+
+                if (podKey && podValue) {
+                    rule.from.push({
+                        podSelector: {
+                            matchLabels: {
+                                [podKey]: podValue
+                            }
+                        }
+                    });
+                }
+
+                if (port) {
+                    rule.ports = [{
+                        port: parseInt(port),
+                        protocol: protocol
+                    }];
+                }
+
+                if (rule.from.length > 0) {
+                    ingressRules.push(rule);
+                }
+            });
+
+            // Egress rules
+            const egressRules = [];
+            document.querySelectorAll('#egressRules .rule-container').forEach(container => {
+                const nsKey = container.querySelector('.ns-label-key').value;
+                const nsValue = container.querySelector('.ns-label-value').value;
+                const podKey = container.querySelector('.pod-label-key').value;
+                const podValue = container.querySelector('.pod-label-value').value;
+                const port = container.querySelector('.port').value;
+                const protocol = container.querySelector('.protocol').value;
+
+                const rule = {
+                    to: []
+                };
+
+                if (nsKey && nsValue) {
+                    rule.to.push({
+                        namespaceSelector: {
+                            matchLabels: {
+                                [nsKey]: nsValue
+                            }
+                        }
+                    });
+                }
+
+                if (podKey && podValue) {
+                    rule.to.push({
+                        podSelector: {
+                            matchLabels: {
+                                [podKey]: podValue
+                            }
+                        }
+                    });
+                }
+
+                if (port) {
+                    rule.ports = [{
+                        port: parseInt(port),
+                        protocol: protocol
+                    }];
+                }
+
+                if (rule.to.length > 0) {
+                    egressRules.push(rule);
+                }
+            });
+
+            const policy = {
+                apiVersion: 'networking.k8s.io/v1',
+                kind: 'NetworkPolicy',
+                metadata: {
+                    name: policyName,
+                    namespace: namespace
+                },
+                spec: {
+                    podSelector: {
+                        matchLabels: podLabels
+                    },
+                    policyTypes: ['Ingress', 'Egress'],
+                    ingress: ingressRules,
+                    egress: egressRules
+                }
+            };
+
+            document.getElementById('output').textContent = 
+                jsToYaml(policy);
+        }
+
+        function jsToYaml(obj, indent = 0) {
+            let yaml = '';
+            const spaces = ' '.repeat(indent);
+
+            for (const key in obj) {
+                if (Array.isArray(obj[key])) {
+                    yaml += `${spaces}${key}:\n`;
+                    if (obj[key].length === 0) {
+                        yaml += `${spaces}[]\n`;
+                    } else {
+                        obj[key].forEach(item => {
+                            yaml += `${spaces}- ${typeof item === 'object' ? '\n' + jsToYaml(item, indent + 2) : item}\n`;
+                        });
+                    }
+                } else if (typeof obj[key] === 'object') {
+                    yaml += `${spaces}${key}:\n${jsToYaml(obj[key], indent + 2)}`;
+                } else {
+                    yaml += `${spaces}${key}: ${obj[key]}\n`;
+                }
+            }
+            return yaml;
+        }
+    </script>
+</body>
+</html>
